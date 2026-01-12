@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2048 - Minecraft Sound Edition</title>
+    <style>
+        /* --- CSS 樣式與配色 --- */
+        body {
+            background-color: #faf8ef;
+            color: #776e65;
+            font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            user-select: none;
+            overflow: hidden;
+            touch-action: none; /* 禁止系統預設觸控行為 */
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 330px;
+            margin-bottom: 10px;
+        }
+
+        .title-area h1 {
+            font-size: 50px;
+            font-weight: bold;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .scores-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            align-items: flex-end;
+        }
+
+        .score-row {
+            display: flex;
+            gap: 5px;
+        }
+
+        .score-box {
+            background-color: #bbada0;
+            padding: 5px 10px;
+            border-radius: 3px;
+            color: white;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .score-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #eee4da;
+            font-weight: bold;
+        }
+
+        .score-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .new-game-btn {
+            background-color: #8f7a66;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 5px;
+            transition: background 0.2s;
+        }
+
+        .new-game-btn:hover {
+            background-color: #776e65;
+        }
+
+        /* --- 遊戲棋盤 --- */
+        #game-board {
+            width: 330px;
+            height: 330px;
+            background-color: #bbada0;
+            border-radius: 6px;
+            position: relative;
+            padding: 10px;
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: repeat(4, 70px);
+            grid-template-rows: repeat(4, 70px);
+            gap: 10px;
+        }
+
+        .grid-cell {
+            background-color: rgba(238, 228, 218, 0.35);
+            border-radius: 3px;
+            width: 70px;
+            height: 70px;
+        }
+
+        .tile {
+            position: absolute;
+            width: 70px; 
+            height: 70px;
+            border-radius: 3px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 35px;
+            transition: transform 0.1s ease-in-out;
+            z-index: 10;
+            animation: pop 0.2s ease-in;
+            line-height: 70px;
+        }
+
+        /* 配色 */
+        .tile-2 { background-color: #eee4da; color: #776e65; }
+        .tile-4 { background-color: #ede0c8; color: #776e65; }
+        .tile-8 { background-color: #f2b179; color: #f9f6f2; }
+        .tile-16 { background-color: #f59563; color: #f9f6f2; }
+        .tile-32 { background-color: #f67c5f; color: #f9f6f2; }
+        .tile-64 { background-color: #f65e3b; color: #f9f6f2; }
+        .tile-128 { background-color: #edcf72; color: #f9f6f2; font-size: 30px; }
+        .tile-256 { background-color: #edcc61; color: #f9f6f2; font-size: 30px; }
+        .tile-512 { background-color: #edc850; color: #f9f6f2; font-size: 30px; }
+        .tile-1024 { background-color: #edc53f; color: #f9f6f2; font-size: 25px; }
+        .tile-2048 { background-color: #edc22e; color: #f9f6f2; font-size: 25px; }
+
+        @keyframes pop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .instructions {
+            margin-top: 15px;
+            color: #776e65;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <div class="title-area">
+            <h1>2048</h1>
+        </div>
+        <div class="scores-container">
+            <div class="score-row">
+                <div class="score-box">
+                    <div class="score-label">Score</div>
+                    <div class="score-value" id="score">0</div>
+                </div>
+                <div class="score-box">
+                    <div class="score-label">Best</div>
+                    <div class="score-value" id="best-score">0</div>
+                </div>
+            </div>
+            <button class="new-game-btn" onclick="resetGame()">New Game</button>
+        </div>
+    </div>
+
+    <div id="game-board">
+        <!-- 背景網格 -->
+        <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+        <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+        <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+        <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+    </div>
+
+    <div class="instructions">
+        使用 <strong>鍵盤、觸控</strong> 或 <strong>滑鼠滑動</strong> 來玩遊戲！<br>
+        
+    </div>
+
+    <script>
+        const boardSize = 4;
+        let board = [];
+        let score = 0;
+        let bestScore = parseInt(localStorage.getItem('bestScore')) || 0;
+        let currentMerge = false;
+
+        // --- 音效系統 ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playWoodSound(isMerge) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const t = audioCtx.currentTime;
+            const bufferSize = audioCtx.sampleRate * 0.1;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(isMerge ? 800 : 300, t);
+            const noiseGain = audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(0.5, t);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+            noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(audioCtx.destination);
+            noise.start();
+        }
+
+        // --- 輸入控制 (滑鼠、觸控、鍵盤) ---
+        let startX, startY;
+
+        function initInput() {
+            document.addEventListener('keydown', handleKeyDown);
+            
+            const boardEl = document.getElementById('game-board');
+            
+            // 觸控
+            boardEl.addEventListener('touchstart', e => {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            }, {passive: true});
+
+            boardEl.addEventListener('touchend', e => {
+                handleEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+            }, {passive: true});
+
+            // 滑鼠滑動
+            boardEl.addEventListener('mousedown', e => {
+                startX = e.clientX;
+                startY = e.clientY;
+            });
+
+            boardEl.addEventListener('mouseup', e => {
+                handleEnd(e.clientX, e.clientY);
+            });
+        }
+
+        function handleEnd(endX, endY) {
+            if (!startX || !startY) return;
+            let dx = endX - startX;
+            let dy = endY - startY;
+            let moved = false;
+            
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (Math.abs(dx) > 30) moved = dx > 0 ? moveRight() : moveLeft();
+            } else {
+                if (Math.abs(dy) > 30) moved = dy > 0 ? moveDown() : moveUp();
+            }
+            if (moved) afterMove();
+            startX = null; startY = null;
+        }
+
+        function handleKeyDown(e) {
+            let moved = false;
+            if (["ArrowUp", "w", "W"].includes(e.key)) moved = moveUp();
+            else if (["ArrowDown", "s", "S"].includes(e.key)) moved = moveDown();
+            else if (["ArrowLeft", "a", "A"].includes(e.key)) moved = moveLeft();
+            else if (["ArrowRight", "d", "D"].includes(e.key)) moved = moveRight();
+            if (moved) afterMove();
+        }
+
+        // --- 遊戲邏輯 ---
+        function resetGame() {
+            board = Array(16).fill(0);
+            score = 0;
+            updateScore();
+            addNewTile(); addNewTile();
+            renderBoard();
+        }
+
+        function addNewTile() {
+            let empty = board.map((v, i) => v === 0 ? i : null).filter(v => v !== null);
+            if (empty.length) board[empty[Math.floor(Math.random() * empty.length)]] = Math.random() < 0.9 ? 2 : 4;
+        }
+
+        function afterMove() {
+            addNewTile();
+            renderBoard();
+            playWoodSound(currentMerge);
+            currentMerge = false;
+            if (checkGameOver()) setTimeout(() => alert("遊戲結束！"), 300);
+        }
+
+        function slide(row) {
+            let arr = row.filter(v => v);
+            let merge = false;
+            for (let i = 0; i < arr.length - 1; i++) {
+                if (arr[i] === arr[i+1]) {
+                    arr[i] *= 2; score += arr[i]; updateScore();
+                    arr[i+1] = 0; merge = true;
+                }
+            }
+            arr = arr.filter(v => v);
+            while (arr.length < 4) arr.push(0);
+            arr.merge = merge;
+            return arr;
+        }
+
+        function moveLeft() {
+            let moved = false;
+            for (let r = 0; r < 4; r++) {
+                let row = board.slice(r*4, r*4+4);
+                let res = slide(row);
+                if (res.toString() !== row.toString()) moved = true;
+                if (res.merge) currentMerge = true;
+                for (let c = 0; c < 4; c++) board[r*4+c] = res[c];
+            }
+            return moved;
+        }
+
+        function moveRight() {
+            let moved = false;
+            for (let r = 0; r < 4; r++) {
+                let row = board.slice(r*4, r*4+4).reverse();
+                let res = slide(row);
+                res.reverse();
+                if (res.toString() !== board.slice(r*4, r*4+4).toString()) moved = true;
+                if (res.merge) currentMerge = true;
+                for (let c = 0; c < 4; c++) board[r*4+c] = res[c];
+            }
+            return moved;
+        }
+
+        function moveUp() {
+            let moved = false;
+            for (let c = 0; c < 4; c++) {
+                let col = [board[c], board[c+4], board[c+8], board[c+12]];
+                let res = slide(col);
+                if (res.toString() !== col.toString()) moved = true;
+                if (res.merge) currentMerge = true;
+                for (let r = 0; r < 4; r++) board[r*4+c] = res[r];
+            }
+            return moved;
+        }
+
+        function moveDown() {
+            let moved = false;
+            for (let c = 0; c < 4; c++) {
+                let col = [board[c], board[c+4], board[c+8], board[c+12]].reverse();
+                let res = slide(col);
+                res.reverse();
+                if (res.toString() !== [board[c], board[c+4], board[c+8], board[c+12]].toString()) moved = true;
+                if (res.merge) currentMerge = true;
+                for (let r = 0; r < 4; r++) board[r*4+c] = res[r];
+            }
+            return moved;
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('bestScore', bestScore);
+                document.getElementById('best-score').textContent = bestScore;
+            }
+        }
+
+        function checkGameOver() {
+            if (board.includes(0)) return false;
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    let v = board[i*4+j];
+                    if (j < 3 && v === board[i*4+j+1]) return false;
+                    if (i < 3 && v === board[i*4+j+4]) return false;
+                }
+            }
+            return true;
+        }
+
+        function renderBoard() {
+            const container = document.getElementById('game-board');
+            container.querySelectorAll('.tile').forEach(t => t.remove());
+            board.forEach((val, i) => {
+                if (val > 0) {
+                    const tile = document.createElement('div');
+                    tile.className = `tile tile-${val}`;
+                    tile.textContent = val;
+                    const r = Math.floor(i / 4), c = i % 4;
+                    tile.style.transform = `translate(${10 + c * 80}px, ${10 + r * 80}px)`;
+                    container.appendChild(tile);
+                }
+            });
+        }
+
+        document.getElementById('best-score').textContent = bestScore;
+        initInput();
+        resetGame();
+    </script>
+</body>
+</html>
