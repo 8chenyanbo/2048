@@ -18,7 +18,7 @@
             margin: 0;
             user-select: none;
             overflow: hidden;
-            touch-action: none; /* 禁止系統預設觸控行為 */
+            touch-action: none; 
         }
 
         .header-container {
@@ -54,7 +54,7 @@
             border-radius: 3px;
             color: white;
             text-align: center;
-            min-width: 60px;
+            min-width: 65px;
         }
 
         .score-label {
@@ -124,7 +124,7 @@
             line-height: 70px;
         }
 
-        /* 配色 */
+        /* 配色 (完全參考圖片) */
         .tile-2 { background-color: #eee4da; color: #776e65; }
         .tile-4 { background-color: #ede0c8; color: #776e65; }
         .tile-8 { background-color: #f2b179; color: #f9f6f2; }
@@ -182,8 +182,8 @@
     </div>
 
     <div class="instructions">
-        使用 <strong>鍵盤、觸控</strong> 或 <strong>滑鼠滑動</strong> 來玩遊戲！<br>
-        
+        使用 <strong>鍵盤、觸控</strong> 或 <strong>滑鼠滑動</strong> 玩遊戲！<br>
+        遊戲會自動存檔，讓你隨時都能繼續冒險。
     </div>
 
     <script>
@@ -193,7 +193,7 @@
         let bestScore = parseInt(localStorage.getItem('bestScore')) || 0;
         let currentMerge = false;
 
-        // --- 音效系統 ---
+        // --- 音效系統 (Minecraft 砍木頭質感) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playWoodSound(isMerge) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -206,23 +206,21 @@
             noise.buffer = buffer;
             const filter = audioCtx.createBiquadFilter();
             filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(isMerge ? 800 : 300, t);
+            filter.frequency.setValueAtTime(isMerge ? 800 : 350, t);
             const noiseGain = audioCtx.createGain();
-            noiseGain.gain.setValueAtTime(0.5, t);
+            noiseGain.gain.setValueAtTime(0.3, t); // 調低一點音量，更耐聽
             noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
             noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(audioCtx.destination);
             noise.start();
         }
 
-        // --- 輸入控制 (滑鼠、觸控、鍵盤) ---
+        // --- 輸入控制 ---
         let startX, startY;
 
         function initInput() {
             document.addEventListener('keydown', handleKeyDown);
-            
             const boardEl = document.getElementById('game-board');
             
-            // 觸控
             boardEl.addEventListener('touchstart', e => {
                 startX = e.touches[0].clientX;
                 startY = e.touches[0].clientY;
@@ -232,7 +230,6 @@
                 handleEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
             }, {passive: true});
 
-            // 滑鼠滑動
             boardEl.addEventListener('mousedown', e => {
                 startX = e.clientX;
                 startY = e.clientY;
@@ -248,7 +245,6 @@
             let dx = endX - startX;
             let dy = endY - startY;
             let moved = false;
-            
             if (Math.abs(dx) > Math.abs(dy)) {
                 if (Math.abs(dx) > 30) moved = dx > 0 ? moveRight() : moveLeft();
             } else {
@@ -267,13 +263,42 @@
             if (moved) afterMove();
         }
 
+        // --- 存檔與讀取 ---
+        function saveGameState() {
+            localStorage.setItem('gameState', JSON.stringify({
+                board: board,
+                score: score
+            }));
+        }
+
+        function loadGameState() {
+            const saved = localStorage.getItem('gameState');
+            if (saved) {
+                const state = JSON.parse(saved);
+                board = state.board;
+                score = state.score;
+                return true;
+            }
+            return false;
+        }
+
         // --- 遊戲邏輯 ---
         function resetGame() {
             board = Array(16).fill(0);
             score = 0;
             updateScore();
             addNewTile(); addNewTile();
+            saveGameState();
             renderBoard();
+        }
+
+        function startGame() {
+            if (!loadGameState()) {
+                resetGame();
+            } else {
+                updateScore();
+                renderBoard();
+            }
         }
 
         function addNewTile() {
@@ -286,7 +311,8 @@
             renderBoard();
             playWoodSound(currentMerge);
             currentMerge = false;
-            if (checkGameOver()) setTimeout(() => alert("遊戲結束！"), 300);
+            saveGameState();
+            if (checkGameOver()) setTimeout(() => alert("遊戲結束！再接再厲！"), 300);
         }
 
         function slide(row) {
@@ -392,7 +418,7 @@
 
         document.getElementById('best-score').textContent = bestScore;
         initInput();
-        resetGame();
+        startGame();
     </script>
 </body>
 </html>
